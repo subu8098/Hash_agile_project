@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Search</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/networkgraph.js"></script>
+</head>
+<body>
+    <h1>Search Candidates by Name</h1>
+    <input type="text" id="searchInput" placeholder="Enter candidate name...">
+    <button id="searchButton">Search</button>
+    <div id="results"></div>
+    
+    <div id="container" style="height: 400px; width: 600px;"></div>
+
+    <script>
+        document.getElementById("searchButton").onclick = function() {
+            const query = document.getElementById("searchInput").value;
+            fetch(`/search?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById("results");
+                    resultsDiv.innerHTML = "<h2>Results:</h2>";
+                    
+                    let nodes = [];
+                    let links = [];
+
+                    data.forEach(candidate => {
+                        resultsDiv.innerHTML += `<p>${candidate.name} (${candidate.email}) - Skills: ${candidate.skills}</p>`;
+                        nodes.push({ id: candidate.name, marker: { radius: 10 } });
+
+                        // Example to link candidates by common skills or college, you can adjust based on your data
+                        data.forEach(other => {
+                            if (candidate !== other && candidate.college === other.college) {
+                                links.push({ from: candidate.name, to: other.name });
+                            }
+                        });
+                    });
+
+                    // Create Highcharts Network Graph
+                    Highcharts.chart('container', {
+                        chart: {
+                            type: 'networkgraph',
+                            height: '100%'
+                        },
+                        title: {
+                            text: 'Candidate Network'
+                        },
+                        plotOptions: {
+                            networkgraph: {
+                                keys: ['from', 'to']
+                            }
+                        },
+                        series: [{
+                            dataLabels: {
+                                enabled: true,
+                                linkFormat: ''
+                            },
+                            marker: {
+                                radius: 10
+                            },
+                            data: links,
+                            nodes: nodes
+                        }]
+                    });
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        };
+    </script>
+</body>
+</html>
